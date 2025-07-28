@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mutual Fund Analysis Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e8f4f8;
+        }
+
+        .card-title {
+            font-size: 1.4em;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .performance-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 25px;
+            font-size: 0.9em;
+        }
+
+        .positive { background: #d4edda; color: #155724; }
+        .negative { background: #f8d7da; color: #721c24; }
+        .neutral { background: #e2e3e5; color: #383d41; }
+
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .metric {
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8f9ff 0%, #e8f4f8 100%);
+            border-radius: 15px;
+            border: 1px solid #e1e8ed;
+        }
+
+        .metric-value {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .metric-label {
+            font-size: 0.85em;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .fund-list {
+            max-height: 400px;
+            overflow-y: auto;
+            border-radius: 10px;
+        }
+
+        .fund-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #f8f9ff 0%, #e8f4f8 100%);
+            border-radius: 15px;
+            border: 1px solid #e1e8ed;
+            transition: all 0.3s ease;
+        }
+
+        .fund-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .fund-info h4 {
+            color: #2c3e50;
+            margin-bottom: 5px;
+            font-size: 1.1em;
+        }
+
+        .fund-details {
+            font-size: 0.9em;
+            color: #64748b;
+        }
+
+        .fund-metrics {
+            text-align: right;
+        }
+
+        .fund-return {
+            font-size: 1.2em;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .risk-indicator {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+
+        .low-risk { background: #d4edda; color: #155724; }
+        .medium-risk { background: #fff3cd; color: #856404; }
+        .high-risk { background: #f8d7da; color: #721c24; }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 20px;
+        }
+
+        .filter-section {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 25px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            align-items: end;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
+        .filter-group select, .filter-group input {
+            padding: 12px;
+            border: 2px solid #e1e8ed;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+
+        .filter-group select:focus, .filter-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .beginner-tips {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 20px;
+            margin-top: 30px;
+        }
+
+        .tips-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .tip-card {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .tip-card h4 {
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .filter-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .metric-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Mutual Fund Analysis Dashboard</h1>
+            <p>Make informed investment decisions with comprehensive fund analysis</p>
+        </div>
+
+        <div class="filter-section">
+            <h3 style="margin-bottom: 20px; color: #2c3e50;">🔍 Fund Filters</h3>
+            <div class="filter-grid">
+                <div class="filter-group">
+                    <label>Fund Category</label>
+                    <select id="categoryFilter">
+                        <option value="all">All Categories</option>
+                        <option value="equity">Equity Funds</option>
+                        <option value="debt">Debt Funds</option>
+                        <option value="hybrid">Hybrid Funds</option>
+                        <option value="index">Index Funds</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Risk Level</label>
+                    <select id="riskFilter">
+                        <option value="all">All Risk Levels</option>
+                        <option value="low">Low Risk</option>
+                        <option value="medium">Medium Risk</option>
+                        <option value="high">High Risk</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Min Return (%)</label>
+                    <input type="number" id="minReturn" placeholder="0" min="0" max="50">
+                </div>
+                <div class="filter-group">
+                    <label>Max Expense Ratio (%)</label>
+                    <input type="number" id="maxExpense" placeholder="1.0" min="0" max="3" step="0.1">
+                </div>
+                <div class="filter-group">
+                    <button class="btn" onclick="applyFilters()">Apply Filters</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Your Portfolio Section -->
+        <div class="card" style="grid-column: 1 / -1; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; margin-bottom: 30px;">
+            <div class="card-header" style="border-bottom: 2px solid rgba(255,255,255,0.3);">
+                <h2 style="color: white; font-size: 1.8em;">🎯 Your Portfolio Analysis</h2>
+                <div class="performance-indicator" style="background: rgba(255,255,255,0.2); color: white;">Portfolio Value: ₹2,45,600</div>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 25px; margin-top: 20px;">
+                
+                <!-- UTI Nifty 50 Analysis -->
+                <div style="background: rgba(255,255,255,0.15); padding: 25px; border-radius: 15px; backdrop-filter: blur(10px);">
+                    <h3 style="color: white; margin-bottom: 15px;">📈 UTI Nifty 50 Index Fund Direct Growth</h3>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px;">
+                        <div style="text-align: center;">
+                            <div style="font-size: 1.5em; font-weight: bold;">₹95.23</div>
+                            <div style="font-size: 0.9em; opacity: 0.8;">Current NAV</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 1.5em; font-weight: bold; color: #4ade80;">+16.8%</div>
+                            <div style="font-size: 0.9em; opacity: 0.8;">1Y Return</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 1.5em; font-weight: bold;">0.20%</div>
+                            <div style="font-size: 0.9em; opacity: 0.8;">Expense Ratio</div>
+                        </div>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                        <h4 style="margin-bottom: 10px;">🔍 Performance Analysis</h4>
+                        <ul style="margin: 0; padding-left: 20px; font-size: 0.9em;">
+                            <li>Tracks Nifty 50 with minimal tracking error (0.05%)</li>
+                            <li>Consistent with benchmark performance</li>
+                            <li>Low cost passive investing strategy</li>
+                            <li>High liquidity and transparency</li>
+                        </ul>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px;">
+                        <h4 style="margin-bottom: 10px;">🔮 Future Outlook (2025-2027)</h4>
+                        <div style="font-size: 0.9em;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                <span>Expected Return (Annual):</span>
+                                <span style="color: #4ade80; font-weight: bold;">12-15%</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                <span>Risk Level:</span>
+                                <span style="color: #fbbf24;">Medium</span>
+                            </div>
+                            <div style="margin-top: 10px; font-size: 0.85em; opacity: 0.9;">
+                                <strong>Key Drivers:</strong> India's GDP growth, corporate earnings recovery, and increasing FII flows support long-term growth.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Parag Parikh Analysis -->
+                <div style="background: rgba(255,255,255,0.15); padding: 25px; border-radius: 15px; backdrop-filter: blur(10px);">
+                    <h3 style="color: white; margin-bottom: 15px;">🚀 Parag Parikh Flexi Cap Fund Direct Growth</h3>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px;">
+                        <div style="text-align: center;">
+                            <div style="font-size: 1.5em; font-weight: bold;">₹64.15</div>
+                            <div style="font-size: 0.9em; opacity: 0.8;">Current NAV</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 1.5em; font-weight: bold; color: #4ade80;">+22.3%</div>
+                            <div style="font-size: 0.9em; opacity: 0.8;">1Y Return</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 1.5em; font-weight: bold;">0.68%</div>
+                            <div style="font-size: 0.9em; opacity: 0.8;">Expense Ratio</div>
+                        </div>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                        <h4 style="margin-bottom: 10px;">🔍 Performance Analysis</h4>
+                        <ul style="margin: 0; padding-left: 20px; font-size: 0.9em;">
+                            <li>Value investing approach with global diversification</li>
+                            <li>25-30% allocation to international stocks</li>
+                            <li>Strong stock selection and risk management</li>
+                            <li>Outperformed benchmark consistently</li>
+                        </ul>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px;">
+                        <h4 style="margin-bottom: 10px;">🔮 Future Outlook (2025-2027)</h4>
+                        <div style="font-size: 0.9em;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                <span>Expected Return (Annual):</span>
+                                <span style="color: #4ade80; font-weight: bold;">15-18%</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                <span>Risk Level:</span>
+                                <span style="color: #f87171;">Medium-High</span>
+                            </div>
+                            <div style="margin-top: 10px; font-size: 0.85em; opacity: 0.9;">
+                                <strong>Key Drivers:</strong> Global market recovery, value stock outperformance, and currency diversification benefits.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">📊 Market Overview</h3>
+                    <div class="performance-indicator positive">📈 +2.3%</div>
+                </div>
+                <div class="metric-grid">
+                    <div class="metric">
+                        <div class="metric-value">₹45.2L Cr</div>
+                        <div class="metric-label">Total AUM</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value">2,847</div>
+                        <div class="metric-label">Active Funds</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value">12.8%</div>
+                        <div class="metric-label">Avg 1Y Return</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value">0.68%</div>
+                        <div class="metric-label">Avg Expense Ratio</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">🏆 Top Performing Funds (1 Year)</h3>
+                </div>
+                <div class="fund-list" id="topFunds">
+                    <!-- Top funds will be populated here -->
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">🛡️ Low Risk High Return Funds</h3>
+                </div>
+                <div class="fund-list" id="lowRiskFunds">
+                    <!-- Low risk funds will be populated here -->
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">💰 Low Cost Direct Funds (< 1% Expense)</h3>
+                </div>
+                <div class="fund-list" id="lowCostFunds">
+                    <!-- Low cost funds will be populated here -->
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">📈 Your Funds vs Market Performance</h3>
+                </div>
+                <div class="chart-container">
+                    <canvas id="performanceChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">📊 Detailed Fund Analysis</h3>
+                </div>
+                <div id="detailedAnalysis" style="max-height: 400px; overflow-y: auto;">
+                    <div style="margin-bottom: 25px; padding: 20px; background: linear-gradient(135deg, #e0f2fe 0%, #e8f5e8 100%); border-radius: 15px; border-left: 5px solid #2196f3;">
+                        <h4 style="color: #1976d2; margin-bottom: 15px;">🎯 UTI Nifty 50 Index Fund - Deep Dive</h4>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 15px;">
+                            <div>
+                                <strong>Fund Size:</strong> ₹8,945 Cr<br>
+                                <strong>Benchmark:</strong> Nifty 50 TRI<br>
+                                <strong>Fund Manager:</strong> Sharwan Goyal<br>
+                                <strong>Launch Date:</strong> Jan 2013
+                            </div>
+                            <div>
+                                <strong>3Y Return:</strong> 14.5% (vs 14.3% benchmark)<br>
+                                <strong>5Y Return:</strong> 11.9% (vs 11.8% benchmark)<br>
+                                <strong>Beta:</strong> 1.00 (perfect market correlation)<br>
+                                <strong>Tracking Error:</strong> 0.05% (excellent)
+                            </div>
+                        </div>
+                        <div style="background: white; padding: 15px; border-radius: 10px; font-size: 0.9em;">
+                            <strong>🔮 Future Outlook:</strong> As a passive index fund, performance will mirror Nifty 50. Expected to benefit from India's economic growth, increasing market cap, and continued FII inflows. Ideal for long-term wealth creation with minimal cost.
+                        </div>
+                    </div>
+
+                    <div style="padding: 20px; background: linear-gradient(135deg, #fff3e0 0%, #f3e5f5 100%); border-radius: 15px; border-left: 5px solid #ff9800;">
+                        <h4 style="color: #f57c00; margin-bottom: 15px;">🚀 Parag Parikh Flexi Cap Fund - Deep Dive</h4>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 15px;">
+                            <div>
+                                <strong>Fund Size:</strong> ₹24,567 Cr<br>
+                                <strong>Fund Managers:</strong> Rajeev Thakkar, Raj Mehta<br>
+                                <strong>Launch Date:</strong> May 2013<br>
+                                <strong>Investment Style:</strong> Value + Global
+                            </div>
+                            <div>
+                                <strong>3Y Return:</strong> 18.7% (vs 14.3% Nifty)<br>
+                                <strong>5Y Return:</strong> 16.2% (vs 11.8% Nifty)<br>
+                                <strong>Alpha:</strong> 4.5% (excellent outperformance)<br>
+                                <strong>International Exposure:</strong> ~25%
+                            </div>
+                        </div>
+                        <div style="background: white; padding: 15px; border-radius: 10px; font-size: 0.9em;">
+                            <strong>🔮 Future Outlook:</strong> Strong potential due to value investing approach and global diversification. Top holdings include Alphabet, Microsoft, and quality Indian stocks. Expected to outperform in market downturns and benefit from global recovery.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">🎯 Risk vs Return Analysis</h3>
+                </div>
+                <div class="chart-container">
+                    <canvas id="riskReturnChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="beginner-tips">
+            <h3>💡 Beginner's Guide to Mutual Fund Investing</h3>
+            <div class="tips-grid">
+                <div class="tip-card">
+                    <h4>🔍 Understand Expense Ratio</h4>
+                    <p>Choose funds with expense ratios below 1%. Direct plans have lower expenses than regular plans, saving you money over time.</p>
+                </div>
+                <div class="tip-card">
+                    <h4>⚖️ Risk vs Return</h4>
+                    <p>Higher returns usually come with higher risk. Diversify across different fund types to balance risk and maximize returns.</p>
+                </div>
+                <div class="tip-card">
+                    <h4>📊 Track Key Metrics</h4>
+                    <p>Monitor Alpha (excess return), Beta (volatility), Sharpe ratio (risk-adjusted return), and Standard deviation (volatility measure).</p>
+                </div>
+                <div class="tip-card">
+                    <h4>⏰ Time in Market</h4>
+                    <p>Start early and stay invested for the long term. Use SIP (Systematic Investment Plan) to benefit from rupee cost averaging.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample mutual fund data
+        const mutualFunds = [
+            {
+                name: "Axis Bluechip Fund",
+                category: "equity",
+                nav: "₹41.23",
+                oneYearReturn: 18.5,
+                threeYearReturn: 15.2,
+                fiveYearReturn: 12.8,
+                expenseRatio: 0.45,
+                risk: "medium",
+                aum: "₹32,450 Cr",
+                alpha: 2.3,
+                beta: 0.95,
+                sharpeRatio: 1.25,
+                standardDeviation: 14.2
+            },
+            {
+                name: "UTI Nifty 50 Index Fund Direct Growth",
+                category: "index",
+                nav: "₹95.23",
+                oneYearReturn: 16.8,
+                threeYearReturn: 14.5,
+                fiveYearReturn: 11.9,
+                expenseRatio: 0.20,
+                risk: "medium",
+                aum: "₹8,945 Cr",
+                alpha: 0.1,
+                beta: 1.0,
+                sharpeRatio: 1.15,
+                standardDeviation: 15.8,
+                isUserHolding: true
+            },
+            {
+                name: "SBI Corporate Bond Fund",
+                category: "debt",
+                nav: "₹15.67",
+                oneYearReturn: 7.2,
+                threeYearReturn: 8.1,
+                fiveYearReturn: 7.8,
+                expenseRatio: 0.35,
+                risk: "low",
+                aum: "₹12,340 Cr",
+                alpha: 1.2,
+                beta: 0.15,
+                sharpeRatio: 1.85,
+                standardDeviation: 2.1
+            },
+            {
+                name: "Parag Parikh Flexi Cap Fund Direct Growth",
+                category: "equity",
+                nav: "₹64.15",
+                oneYearReturn: 22.3,
+                threeYearReturn: 18.7,
+                fiveYearReturn: 16.2,
+                expenseRatio: 0.68,
+                risk: "high",
+                aum: "₹24,567 Cr",
+                alpha: 4.5,
+                beta: 1.2,
+                sharpeRatio: 1.45,
+                standardDeviation: 18.9,
+                isUserHolding: true
+            },
+            {
+                name: "ICICI Prudential Balanced Advantage",
+                category: "hybrid",
+                nav: "₹42.15",
+                oneYearReturn: 14.2,
+                threeYearReturn: 12.8,
+                fiveYearReturn: 11.5,
+                expenseRatio: 0.75,
+                risk: "medium",
+                aum: "₹18,234 Cr",
+                alpha: 2.1,
+                beta: 0.8,
+                sharpeRatio: 1.35,
+                standardDeviation: 12.4
+            },
+            {
+                name: "UTI Nifty Next 50 Index Fund",
+                category: "index",
+                nav: "₹89.23",
+                oneYearReturn: 19.8,
+                threeYearReturn: 16.4,
+                fiveYearReturn: 13.7,
+                expenseRatio: 0.25,
+                risk: "medium",
+                aum: "₹5,678 Cr",
+                alpha: 0.3,
+                beta: 1.1,
+                sharpeRatio: 1.28,
+                standardDeviation: 17.2
+            },
+            {
+                name: "Mirae Asset Large Cap Fund",
+                category: "equity",
+                nav: "₹78.90",
+                oneYearReturn: 17.6,
+                threeYearReturn: 14.9,
+                fiveYearReturn: 12.3,
+                expenseRatio: 0.52,
+                risk: "medium",
+                aum: "₹21,890 Cr",
+                alpha: 1.8,
+                beta: 0.92,
+                sharpeRatio: 1.22,
+                standardDeviation: 13.8
+            },
+            {
+                name: "Kotak Corporate Bond Fund",
+                category: "debt",
+                nav: "₹12.45",
+                oneYearReturn: 6.8,
+                threeYearReturn: 7.9,
+                fiveYearReturn: 7.5,
+                expenseRatio: 0.40,
+                risk: "low",
+                aum: "₹9,567 Cr",
+                alpha: 0.9,
+                beta: 0.12,
+                sharpeRatio: 1.75,
+                standardDeviation: 1.9
+            }
+        ];
+
+        function renderFundList(funds, containerId) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            
+            funds.forEach(fund => {
+                const fundElement = document.createElement('div');
+                fundElement.className = 'fund-item';
+                
+                // Highlight user's funds
+                if (fund.isUserHolding) {
+                    fundElement.style.background = 'linear-gradient(135deg, #fff9c4 0%, #d4edda 100%)';
+                    fundElement.style.border = '2px solid #28a745';
+                }
+                
+                const riskClass = fund.risk === 'low' ? 'low-risk' : 
+                                 fund.risk === 'medium' ? 'medium-risk' : 'high-risk';
+                
+                const returnClass = fund.oneYearReturn > 15 ? 'positive' : 
+                                   fund.oneYearReturn > 10 ? 'neutral' : 'negative';
+                
+                fundElement.innerHTML = `
+                    <div class="fund-info">
+                        <h4>${fund.name} ${fund.isUserHolding ? '⭐ (Your Fund)' : ''}</h4>
+                        <div class="fund-details">
+                            NAV: ${fund.nav} | AUM: ${fund.aum} | Expense: ${fund.expenseRatio}%
+                        </div>
+                        <div class="fund-details" style="margin-top: 5px;">
+                            Alpha: ${fund.alpha}% | Beta: ${fund.beta} | Sharpe: ${fund.sharpeRatio}
+                        </div>
+                    </div>
+                    <div class="fund-metrics">
+                        <div class="fund-return ${returnClass}">${fund.oneYearReturn}%</div>
+                        <div class="risk-indicator ${riskClass}">${fund.risk.toUpperCase()} RISK</div>
+                    </div>
+                `;
+                
+                container.appendChild(fundElement);
+            });
+        }
+
+        function initializeDashboard() {
+            // Sort and display top performing funds
+            const topFunds = [...mutualFunds].sort((a, b) => b.oneYearReturn - a.oneYearReturn).slice(0, 5);
+            renderFundList(topFunds, 'topFunds');
+            
+            // Low risk high return funds
+            const lowRiskFunds = mutualFunds.filter(fund => fund.risk === 'low' || (fund.risk === 'medium' && fund.oneYearReturn > 12));
+            renderFundList(lowRiskFunds, 'lowRiskFunds');
+            
+            // Low cost direct funds
+            const lowCostFunds = mutualFunds.filter(fund => fund.expenseRatio < 1.0).sort((a, b) => a.expenseRatio - b.expenseRatio);
+            renderFundList(lowCostFunds, 'lowCostFunds');
+            
+            // Initialize charts
+            initializeCharts();
+        }
+
+        function initializeCharts() {
+            // Performance comparison chart - highlighting user's funds
+            const ctx1 = document.getElementById('performanceChart').getContext('2d');
+            const userFunds = mutualFunds.filter(fund => fund.isUserHolding);
+            const nifty50Benchmark = [16.5, 14.3, 11.8]; // Nifty 50 benchmark returns
+            
+            const performanceChart = new Chart(ctx1, {
+                type: 'line',
+                data: {
+                    labels: ['1 Year', '3 Years', '5 Years'],
+                    datasets: [
+                        ...userFunds.map((fund, index) => ({
+                            label: fund.name.includes('UTI') ? 'UTI Nifty 50 (Your Fund)' : 'Parag Parikh Flexi Cap (Your Fund)',
+                            data: [fund.oneYearReturn, fund.threeYearReturn, fund.fiveYearReturn],
+                            borderColor: index === 0 ? '#2196f3' : '#ff9800',
+                            backgroundColor: index === 0 ? 'rgba(33, 150, 243, 0.1)' : 'rgba(255, 152, 0, 0.1)',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            pointRadius: 6,
+                            pointHoverRadius: 8
+                        })),
+                        {
+                            label: 'Nifty 50 Benchmark',
+                            data: nifty50Benchmark,
+                            borderColor: '#9e9e9e',
+                            backgroundColor: 'rgba(158, 158, 158, 0.1)',
+                            borderDash: [5, 5],
+                            tension: 0.4,
+                            pointRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 20
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Your Funds Performance vs Benchmark',
+                            font: {
+                                size: 16
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Annual Return (%)',
+                                font: {
+                                    size: 14
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Time Period',
+                                font: {
+                                    size: 14
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Risk vs Return scatter plot
+            const ctx2 = document.getElementById('riskReturnChart').getContext('2d');
+            const riskReturnChart = new Chart(ctx2, {
+                type: 'scatter',
+                data: {
+                    datasets: [
+                        {
+                            label: 'Your Funds',
+                            data: mutualFunds.filter(fund => fund.isUserHolding).map(fund => ({
+                                x: fund.standardDeviation,
+                                y: fund.oneYearReturn,
+                                fund: fund.name
+                            })),
+                            backgroundColor: 'rgba(255, 152, 0, 0.8)',
+                            borderColor: 'rgba(255, 152, 0, 1)',
+                            pointRadius: 12,
+                            pointHoverRadius: 16
+                        },
+                        {
+                            label: 'Other Funds',
+                            data: mutualFunds.filter(fund => !fund.isUserHolding).map(fund => ({
+                                x: fund.standardDeviation,
+                                y: fund.oneYearReturn,
+                                fund: fund.name
+                            })),
+                            backgroundColor: 'rgba(102, 126, 234, 0.6)',
+                            borderColor: 'rgba(102, 126, 234, 1)',
+                            pointRadius: 8,
+                            pointHoverRadius: 12
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.raw.fund}: Risk ${context.parsed.x}%, Return ${context.parsed.y}%`;
+                                }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Risk vs Return Analysis - Your Portfolio Highlighted',
+                            font: {
+                                size: 16
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Risk (Standard Deviation %)'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: '1-Year Return (%)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function applyFilters() {
+            const category = document.getElementById('categoryFilter').value;
+            const risk = document.getElementById('riskFilter').value;
+            const minReturn = parseFloat(document.getElementById('minReturn').value) || 0;
+            const maxExpense = parseFloat(document.getElementById('maxExpense').value) || 999;
+            
+            let filteredFunds = mutualFunds.filter(fund => {
+                return (category === 'all' || fund.category === category) &&
+                       (risk === 'all' || fund.risk === risk) &&
+                       fund.oneYearReturn >= minReturn &&
+                       fund.expenseRatio <= maxExpense;
+            });
+            
+            // Update all fund lists with filtered data
+            const topFiltered = [...filteredFunds].sort((a, b) => b.oneYearReturn - a.oneYearReturn).slice(0, 5);
+            renderFundList(topFiltered, 'topFunds');
+            
+            const lowRiskFiltered = filteredFunds.filter(fund => fund.risk === 'low' || (fund.risk === 'medium' && fund.oneYearReturn > 12));
+            renderFundList(lowRiskFiltered, 'lowRiskFunds');
+            
+            const lowCostFiltered = filteredFunds.filter(fund => fund.expenseRatio < 1.0).sort((a, b) => a.expenseRatio - b.expenseRatio);
+            renderFundList(lowCostFiltered, 'lowCostFunds');
+        }
+
+        // Initialize dashboard when page loads
+        document.addEventListener('DOMContentLoaded', initializeDashboard);
+    </script>
+</body>
+</html>

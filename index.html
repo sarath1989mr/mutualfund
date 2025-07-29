@@ -569,46 +569,130 @@
 
     <script>
         // Sample mutual fund data
-        const mutualFunds = [];
-
-        async function fetchLiveMutualFundData() {
-    try {
-        const response = await fetch('https://www.amfiindia.com/spages/NAVAll.txt');
-        const text = await response.text();
-
-        const lines = text.split('\n');
-        const headerIndex = lines.findIndex(line => line.includes('Scheme Code;ISIN Div Payout/ISIN Growth;ISIN Div Reinvestment;Scheme Name;Net Asset Value;Date'));
-        const dataLines = lines.slice(headerIndex + 1).filter(line => line.trim() !== '');
-
-        const parsedFunds = dataLines.map(line => {
-            const [ , , , name, nav, date] = line.split(';');
-            return {
-                name: name.trim(),
-                nav: `₹${parseFloat(nav).toFixed(2)}`,
-                oneYearReturn: Math.round(5 + Math.random() * 20 * 10) / 10, // simulate
-                threeYearReturn: Math.round(7 + Math.random() * 15 * 10) / 10,
-                fiveYearReturn: Math.round(8 + Math.random() * 12 * 10) / 10,
-                expenseRatio: Math.round((0.2 + Math.random() * 1) * 100) / 100,
-                risk: ['low', 'medium', 'high'][Math.floor(Math.random() * 3)],
-                aum: `₹${(Math.random() * 50000 + 5000).toFixed(0)} Cr`,
-                alpha: (Math.random() * 5).toFixed(2),
-                beta: (Math.random() * 1.5).toFixed(2),
-                sharpeRatio: (1 + Math.random()).toFixed(2),
-                standardDeviation: (Math.random() * 20).toFixed(2),
-                isUserHolding: Math.random() < 0.05 // randomly mark some as "your funds"
-            };
-        }).slice(0, 50); // keep first 50 only for performance
-
-        mutualFunds.push(...parsedFunds);
-        initializeDashboard();
-
-    } catch (err) {
-        console.error('Failed to fetch AMFI NAV data', err);
-    }
-}
-
-document.addEventListener('DOMContentLoaded', fetchLiveMutualFundData);
-        
+        const mutualFunds = [
+            {
+                name: "Axis Bluechip Fund",
+                category: "equity",
+                nav: "₹41.23",
+                oneYearReturn: 18.5,
+                threeYearReturn: 15.2,
+                fiveYearReturn: 12.8,
+                expenseRatio: 0.45,
+                risk: "medium",
+                aum: "₹32,450 Cr",
+                alpha: 2.3,
+                beta: 0.95,
+                sharpeRatio: 1.25,
+                standardDeviation: 14.2
+            },
+            {
+                name: "UTI Nifty 50 Index Fund Direct Growth",
+                category: "index",
+                nav: "₹95.23",
+                oneYearReturn: 16.8,
+                threeYearReturn: 14.5,
+                fiveYearReturn: 11.9,
+                expenseRatio: 0.20,
+                risk: "medium",
+                aum: "₹8,945 Cr",
+                alpha: 0.1,
+                beta: 1.0,
+                sharpeRatio: 1.15,
+                standardDeviation: 15.8,
+                isUserHolding: true
+            },
+            {
+                name: "SBI Corporate Bond Fund",
+                category: "debt",
+                nav: "₹15.67",
+                oneYearReturn: 7.2,
+                threeYearReturn: 8.1,
+                fiveYearReturn: 7.8,
+                expenseRatio: 0.35,
+                risk: "low",
+                aum: "₹12,340 Cr",
+                alpha: 1.2,
+                beta: 0.15,
+                sharpeRatio: 1.85,
+                standardDeviation: 2.1
+            },
+            {
+                name: "Parag Parikh Flexi Cap Fund Direct Growth",
+                category: "equity",
+                nav: "₹64.15",
+                oneYearReturn: 22.3,
+                threeYearReturn: 18.7,
+                fiveYearReturn: 16.2,
+                expenseRatio: 0.68,
+                risk: "high",
+                aum: "₹24,567 Cr",
+                alpha: 4.5,
+                beta: 1.2,
+                sharpeRatio: 1.45,
+                standardDeviation: 18.9,
+                isUserHolding: true
+            },
+            {
+                name: "ICICI Prudential Balanced Advantage",
+                category: "hybrid",
+                nav: "₹42.15",
+                oneYearReturn: 14.2,
+                threeYearReturn: 12.8,
+                fiveYearReturn: 11.5,
+                expenseRatio: 0.75,
+                risk: "medium",
+                aum: "₹18,234 Cr",
+                alpha: 2.1,
+                beta: 0.8,
+                sharpeRatio: 1.35,
+                standardDeviation: 12.4
+            },
+            {
+                name: "UTI Nifty Next 50 Index Fund",
+                category: "index",
+                nav: "₹89.23",
+                oneYearReturn: 19.8,
+                threeYearReturn: 16.4,
+                fiveYearReturn: 13.7,
+                expenseRatio: 0.25,
+                risk: "medium",
+                aum: "₹5,678 Cr",
+                alpha: 0.3,
+                beta: 1.1,
+                sharpeRatio: 1.28,
+                standardDeviation: 17.2
+            },
+            {
+                name: "Mirae Asset Large Cap Fund",
+                category: "equity",
+                nav: "₹78.90",
+                oneYearReturn: 17.6,
+                threeYearReturn: 14.9,
+                fiveYearReturn: 12.3,
+                expenseRatio: 0.52,
+                risk: "medium",
+                aum: "₹21,890 Cr",
+                alpha: 1.8,
+                beta: 0.92,
+                sharpeRatio: 1.22,
+                standardDeviation: 13.8
+            },
+            {
+                name: "Kotak Corporate Bond Fund",
+                category: "debt",
+                nav: "₹12.45",
+                oneYearReturn: 6.8,
+                threeYearReturn: 7.9,
+                fiveYearReturn: 7.5,
+                expenseRatio: 0.40,
+                risk: "low",
+                aum: "₹9,567 Cr",
+                alpha: 0.9,
+                beta: 0.12,
+                sharpeRatio: 1.75,
+                standardDeviation: 1.9
+            }
+        ];
 
         function renderFundList(funds, containerId) {
             const container = document.getElementById(containerId);
